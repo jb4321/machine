@@ -1,86 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include<map>
 
 #include <pdcurses.h>
-//zmienne
 
-class Cell
-{
-    private:
-        /* data */
-    public:
-    std::string name;
-    Cell(std::string name_ =  "default")
-    {
-        name = name_;
-    }
-};
-class Chunk
-{   
-    private:
-        /* data */
-    public:
-        const int CHUNK_SIZE = 16;
-        Cell chunk_data[16][16];
-        
-    Chunk(int x_,int y_)
-    {
-        GenerateChunk();
-        CommandLineChunk();
-    }
-    void GenerateChunk()
-    {
-        for (int i = 0; i < CHUNK_SIZE; i++)
-        {
-            for (int j = 0; j < CHUNK_SIZE; j++)
-            {
-                std::string name_it;
-                if(i%2==0){name_it = "a";}
-                else{name_it = "b";}
-                chunk_data[i][j]= Cell(name_it);
-            }
-            
-        }
-        
-    }
-    void CommandLineChunk()
-    {
-        for (int i = 0; i < CHUNK_SIZE; i++)
-        {
-            for (int j = 0; j < CHUNK_SIZE; j++)
-            {
-                std::cout << chunk_data[i][j].name<<" ";
-            }
-            std::cout << std::endl;
-            
-        }
-    }
-    void RenderChunk(int cam_y, int cam_x)
-    {
-        //i -> y and j -> x;
-        for (int i = 0; i < CHUNK_SIZE; i++)
-        {
-            
-            for (int j = 0; j < CHUNK_SIZE; j++)
-            {
-
-                mvprintw(i-cam_y,j-cam_x,chunk_data[i][j].name.c_str());
-            }
-            
-        }
-    }
-};
-class Map
-{
-    private:
-        /* data */
-    public:
-
-};
-
-
-
+#include "scripts/map.h"
+#include "scripts/color_handling.h"
 int x = 0;
 int y = 0;
 int term_x = 60;
@@ -105,6 +31,35 @@ bool IsNotOut(int y_, int x_)
 void myclear()
 {
 
+}
+void Start()
+{
+    #ifdef XCURSES
+        Xinitscr(argc, argv);
+    #else
+        initscr();
+    #endif
+    def_prog_mode();
+    raw();
+    resize_term(term_y, term_x);
+    refresh();
+    if(has_colors() == FALSE)
+	{	endwin();
+		printf("Your terminal does not support color\n");
+		exit(1);
+	}
+    
+    start_color();
+    init_colorpairs(); 
+
+    printw( "Press Button..\n" );
+    keypad(stdscr, TRUE);	
+    noecho();
+
+    
+    color_print(0,20,"a",1,2);
+    color_print(0,30,"a",2,4);
+    move(y,x);
 }
 void GameLoop()
 {
@@ -162,31 +117,7 @@ void GameLoop()
         refresh();
     } while (true);
 }
-void Start()
-{
-    #ifdef XCURSES
-        Xinitscr(argc, argv);
-    #else
-        initscr();
-    #endif
-    def_prog_mode();
-    raw();
-    resize_term(term_y, term_x);
-    refresh();
-    if(has_colors() == FALSE)
-	{	endwin();
-		printf("Your terminal does not support color\n");
-		exit(1);
-	}
-    
-    start_color();
-    init_pair(1,COLOR_RED,COLOR_BLACK);
 
-    printw( "Press Button..\n" );
-    keypad(stdscr, TRUE);	
-    noecho();
-    move(y,x);
-}
 void End()
 {
     printw( "End" );
