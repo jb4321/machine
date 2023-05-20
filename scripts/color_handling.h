@@ -62,9 +62,9 @@ void setcolor(int fg, int bg)
     /* set the color pair (colornum) and bold/bright (A_BOLD) */
 
     attron(COLOR_PAIR(colornum(fg, bg)));
-    if (is_bold(fg)) {
+    /*if (is_bold(fg)) {
         attron(A_BOLD);
-    }
+    }*/
 }
 
 void unsetcolor(int fg, int bg)
@@ -73,14 +73,14 @@ void unsetcolor(int fg, int bg)
        bold/bright (A_BOLD) */
 
     attroff(COLOR_PAIR(colornum(fg, bg)));
-    if (is_bold(fg)) {
+    /*if (is_bold(fg)) {
         attroff(A_BOLD);
-    }
+    }*/
 }
-void color_print(int y_, int x_, const char* sign, int fg, int bg)
+void color_print(int y_, int x_, const char* text, int fg, int bg)
 {
     setcolor(fg,bg);
-    mvprintw(y_,x_,sign);
+    mvprintw(y_,x_,text);
     unsetcolor(fg,bg);
 }
 #endif

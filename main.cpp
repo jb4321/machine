@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
-#include<map>
+#include <map>
+#include <cmath>
+#include <functional>
 
 #include <pdcurses.h>
 
@@ -11,10 +13,21 @@ int x = 0;
 int y = 0;
 int term_x = 60;
 int term_y = 30;
-Chunk chunk1(1,2);
+WorldMap world_map;
+
 void RenderGame()
 {
-    chunk1.RenderChunk(y,x);
+    for(int i = 0; i < LINES; i++)
+    {
+        for(int j = 0; j < COLS; j++)
+        {
+            int w_y = i + y;
+            int w_x = j + x;
+            Cell w_cell = world_map.GetCell(w_y,w_x);
+            CellObjectInfo w_info = w_cell.get_info();
+            color_print(i, j ,w_info.sign,w_info.fg,w_info.bg);
+        }    
+    }
 }
 bool IsNotOut(int y_, int x_)
 {
@@ -34,6 +47,7 @@ void myclear()
 }
 void Start()
 {
+    
     #ifdef XCURSES
         Xinitscr(argc, argv);
     #else
@@ -105,14 +119,9 @@ void GameLoop()
         RenderGame();
         mvprintw(term_y/2,term_x/2,"@");
         
-        std::string txt = std::to_string(x) + "," + std::to_string(y) + " ";
-        attron(A_BOLD);
-        attron(COLOR_PAIR(1));
+        std::string txt = std::to_string(x) + "," + std::to_string(y);
+        color_print(0,0,txt.c_str(),COLOR_RED,COLOR_WHITE);
 
-        mvprintw(0,0,txt.c_str());
-        attroff(A_BOLD);
-        attroff(COLOR_PAIR(1));
-        
         move(term_y/2,term_x/2);
         refresh();
     } while (true);
