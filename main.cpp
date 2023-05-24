@@ -7,28 +7,32 @@
 
 #include <pdcurses.h>
 
+#include "scripts/FastNoise.h"
+
 #include "scripts/map.h"
 #include "scripts/color_handling.h"
+#ifdef _WIN32
+    #include <windows.h>
+
+    void sleep(unsigned milliseconds)
+    {
+        Sleep(milliseconds);
+    }
+#else
+    #include <unistd.h>
+    
+    void sleep(unsigned milliseconds)
+    {
+        usleep(milliseconds * 1000); // takes microseconds
+    }
+#endif
 int x = 0;
 int y = 0;
 int term_x = 60;
 int term_y = 30;
 WorldMap world_map;
 
-void RenderGame()
-{
-    for(int i = 0; i < LINES; i++)
-    {
-        for(int j = 0; j < COLS; j++)
-        {
-            int w_y = i + y;
-            int w_x = j + x;
-            Cell w_cell = world_map.GetCell(w_y,w_x);
-            CellObjectInfo w_info = w_cell.get_info();
-            color_print(i, j ,w_info.sign,w_info.fg,w_info.bg);
-        }    
-    }
-}
+
 bool IsNotOut(int y_, int x_)
 {
     if(x_ >= term_x || x_ < 0)
@@ -75,6 +79,20 @@ void Start()
     color_print(0,30,"a",2,4);
     move(y,x);
 }
+void RenderGame()   
+{
+    for(int i = 0; i < LINES; i++)
+    {
+        for(int j = 0; j < COLS; j++)
+        {
+            int w_y = i + y;
+            int w_x = j + x;
+            Cell w_cell = world_map.GetCell(w_y,w_x);
+            InfoGenericObject w_info = w_cell.get_info();
+            color_print(i, j ,w_info.sign,w_info.fg,w_info.bg);
+        }    
+    }
+}
 void GameLoop()
 {
     do
@@ -82,7 +100,7 @@ void GameLoop()
         int ny=y;
         int nx=x; 
         int key = getch();
-        
+        sleep(30);
         switch (key)
         {
             case KEY_UP:
@@ -135,7 +153,6 @@ void End()
 }
 int main(int argc, char **argv)
 {
-    
     Start();
     GameLoop();
     End();
