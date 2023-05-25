@@ -1,5 +1,6 @@
 #ifndef COLOR_HAND_H
 #define COLOR_HAND_H
+#include <pdcurses.h>
 
 short curs_color(int fg)
 {
@@ -57,30 +58,30 @@ int is_bold(int fg)
     return (i & fg);
 }
 
-void setcolor(int fg, int bg)
+void setcolor(int fg, int bg, WINDOW *window_p=stdscr)
 {
     /* set the color pair (colornum) and bold/bright (A_BOLD) */
 
-    attron(COLOR_PAIR(colornum(fg, bg)));
+    wattron(window_p,COLOR_PAIR(colornum(fg, bg)));
     /*if (is_bold(fg)) {
         attron(A_BOLD);
     }*/
 }
 
-void unsetcolor(int fg, int bg)
+void unsetcolor(int fg, int bg, WINDOW *window_p=stdscr)
 {
     /* unset the color pair (colornum) and
        bold/bright (A_BOLD) */
 
-    attroff(COLOR_PAIR(colornum(fg, bg)));
+    wattroff(window_p,COLOR_PAIR(colornum(fg, bg)));
     /*if (is_bold(fg)) {
         attroff(A_BOLD);
     }*/
 }
-void color_print(int y_, int x_, const char* text, int fg, int bg)
+void color_print(int y_, int x_, const char* text, int fg, int bg,WINDOW *window_print = stdscr)
 {
-    setcolor(fg,bg);
-    mvprintw(y_,x_,text);
-    unsetcolor(fg,bg);
+    setcolor(fg,bg,window_print);
+    mvwprintw(window_print,y_,x_,text);
+    unsetcolor(fg,bg,window_print);
 }
 #endif

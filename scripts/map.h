@@ -47,7 +47,7 @@ std::map<std::string,InfoGenericObject> object_info_table = {
     {"none", InfoGenericObject()},
     {"cya", InfoGenericObject("$",COLOR_BLACK,COLOR_CYAN)}, 
     {"default" , InfoGenericObject("χ",COLOR_BLACK,COLOR_WHITE)},
-    {"grass" , InfoGenericObject("▓",COLOR_BLACK,COLOR_WHITE)},
+    {"grass" , InfoGenericObject("░",COLOR_CYAN)},
     {"a" , InfoGenericObject("a",COLOR_MAGENTA)},
     {"b" , InfoGenericObject("b",COLOR_CYAN)},
     {"c" , InfoGenericObject("c",COLOR_BLACK)},
@@ -55,7 +55,7 @@ std::map<std::string,InfoGenericObject> object_info_table = {
     //FLOORS
     {"sand" , InfoGenericObject(COLOR_YELLOW)},
     {"grass_floor" , InfoGenericObject(COLOR_GREEN)},
-    {"stone_floor" , InfoGenericObject("S",COLOR_BLACK,COLOR_WHITE)}
+    {"stone_floor" , InfoGenericObject(COLOR_WHITE)}
 };
 
 
@@ -74,50 +74,22 @@ class GenericObject
 };
 
 
-class Biome
-{
-    public:
-        std::string biome_floor;
-        float temp;
-        //GenericObject gen_feature;
-    Biome(std::string biome_floor_, float temp_)
-    {
-        biome_floor = biome_floor_;
-        temp = temp_;
-        //gen_feature = gen_feature_;
-    }
-    Biome()
-    {
-        biome_floor = "cya";
-        temp = 2;
-    }
-};
-
-std::map<std::string,Biome> biome_info = {
-    {"none", Biome()}, //"none" is debug biome, 2 cant be reached by noise functions
-    {"desert", Biome("sand",0.5)},
-    {"plains", Biome("grass_floor",-1)},
-    {"stone_desert", Biome("stone_floor",0.7)} 
-};
-
-
-//WORLD STRUCTURE
 class Cell
 {
     private:
         /* data */
     public:
     GenericObject object_cell;
-    std::string floor_name;
+    GenericObject floor_object;
     Cell(std::string floor_ = "default",std::string name_ =  "none")
     {
-        floor_name = floor_;
+        floor_object.object_name = floor_;
         object_cell.object_name = name_;
     }
     InfoGenericObject get_info()
     {
         InfoGenericObject object = object_cell.GetInfo();
-        InfoGenericObject floor_i = object_info_table[floor_name];
+        InfoGenericObject floor_i = floor_object.GetInfo();
         InfoGenericObject render(object.sign,object.fg,object.bg);
         if (object.sign == " ")
         {
@@ -134,6 +106,82 @@ class Cell
         return render;
     }
 };
+class GenericFeature
+{
+    public:
+        float chance;
+        GenericObject feature_object; 
+    GenericFeature(float chance_,GenericObject feature_object_)
+    {
+        chance = chance_;
+        feature_object = feature_object_;
+    }
+    GenericFeature()
+    {
+        chance = 0;
+        feature_object = GenericObject();
+    }
+    bool Generate()
+    {
+        float r = (float)(rand()) / (float)(RAND_MAX);
+        if (r <= chance)
+        {
+            return true;
+        }
+        return false;
+    }
+};
+class Biome
+{
+    public:
+        std::string biome_floor;
+        float temp;
+        std::vector<GenericFeature> gen_features;
+    Biome(std::string biome_floor_, float temp_, std::vector<GenericFeature> gen_features_ = {})
+    {
+        biome_floor = biome_floor_;
+        temp = temp_;
+        gen_features = gen_features_;
+    }
+    Biome()
+    {
+        biome_floor = "cya";
+        temp = 2;
+    }
+    GenericObject chooseRandomFeature()
+    {
+        
+        for (int i =0; i < gen_features.size();i++)
+        {
+            if (gen_features[i].Generate())
+            {
+                return gen_features[i].feature_object;
+            }
+        }
+        return GenericObject();
+
+    }
+    Cell GetCell()
+    {
+        Cell new_cell = Cell();
+        GenericObject generated_feature = chooseRandomFeature();
+        new_cell.object_cell = generated_feature;
+        
+        new_cell.floor_object.object_name = biome_floor;
+        return new_cell;
+    }
+};
+
+std::map<std::string,Biome> biome_info = {
+    {"none", Biome()}, //"none" is debug biome, 2 cant be reached by noise functions
+    {"desert", Biome("sand",0.5)},
+    {"plains", Biome("grass_floor",-1,{GenericFeature(0.5,GenericObject("grass"))})},
+    {"stone_desert", Biome("stone_floor",0.7)} 
+};
+
+
+//WORLD STRUCTURE
+
 
 class Chunk
 {
@@ -183,7 +231,7 @@ class Chunk
         std::string biome_name = BiomeChoose(noise_value);
         Biome cell_biome = biome_info[biome_name];
         //std::cout << map_noise.GetNoise(float(x_)*SCALING_CH,float(y_)*SCALING_CH);
-        new_cell = Cell(cell_biome.biome_floor);
+        new_cell = cell_biome.GetCell();
         return new_cell;
     }
     void GenerateChunk(int ch_y, int ch_x,FastNoise map_noise)
@@ -222,6 +270,7 @@ class WorldMap
 
     WorldMap()
     {
+        srand(123);
         map_noise.SetSeed(123);
     }
     Chunk GenerateChunk(int ch_y, int ch_x)
