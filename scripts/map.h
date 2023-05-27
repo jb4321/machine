@@ -4,33 +4,47 @@
 #include "color_handling.h"
 #include "FastNoise.h"
 
-class InfoGenericObject
-{
-    private:
 
+class RenderInfo
+{
     public:
         const char* sign;
         int fg;
         int bg;
-        bool is_pass;
-    InfoGenericObject(const char* sign_, int fg_ = -1, int bg_ = -1,bool is_pass_ = true)
+    RenderInfo(const char* sign_, int fg_ = -1, int bg_ = -1)
     {
         sign = sign_;
         fg = fg_;
         bg = bg_;
     }
-    InfoGenericObject(int bg_,bool is_pass_ = true)
+    RenderInfo(int bg_,bool is_pass_ = true)
     {
         sign = " ";
         fg = -1;
         bg = bg_;
-        is_pass = is_pass_;
     }
-    InfoGenericObject()
+    RenderInfo()
     {
         sign = " ";
         fg = -1;
         bg = -1;
+    }
+};
+class InfoGenericObject
+{
+    private:
+
+    public:
+        RenderInfo render;
+        bool is_pass;
+    InfoGenericObject(RenderInfo render_, bool is_pass_ = true)
+    {
+        render = render_;
+        is_pass = is_pass_;
+    }
+    InfoGenericObject()
+    {
+        render = RenderInfo();
         is_pass = true;
     }
 };
@@ -45,17 +59,17 @@ class InfoGenericObject
 */
 std::map<std::string,InfoGenericObject> object_info_table = {
     {"none", InfoGenericObject()},
-    {"cya", InfoGenericObject("$",COLOR_BLACK,COLOR_CYAN)}, 
-    {"default" , InfoGenericObject("χ",COLOR_BLACK,COLOR_WHITE)},
-    {"grass" , InfoGenericObject("░",COLOR_CYAN)},
-    {"a" , InfoGenericObject("a",COLOR_MAGENTA)},
-    {"b" , InfoGenericObject("b",COLOR_CYAN)},
-    {"c" , InfoGenericObject("c",COLOR_BLACK)},
-    {"d" , InfoGenericObject("d",COLOR_MAGENTA)},
+    {"cya", InfoGenericObject(RenderInfo("$",COLOR_BLACK,COLOR_CYAN))}, 
+    {"default" , InfoGenericObject(RenderInfo("χ",COLOR_BLACK,COLOR_WHITE))},
+    {"grass" , InfoGenericObject(RenderInfo("░",COLOR_YELLOW))},
+    {"stone" , InfoGenericObject(RenderInfo("⌂",COLOR_BLACK,COLOR_WHITE),false)},
+    {"iron" , InfoGenericObject(RenderInfo("I",COLOR_BLACK,COLOR_WHITE),false)},
+    {"copper" , InfoGenericObject(RenderInfo("C",COLOR_RED,COLOR_WHITE),false)},
+
     //FLOORS
-    {"sand" , InfoGenericObject(COLOR_YELLOW)},
-    {"grass_floor" , InfoGenericObject(COLOR_GREEN)},
-    {"stone_floor" , InfoGenericObject(COLOR_WHITE)}
+    {"sand" , InfoGenericObject(RenderInfo("░",COLOR_BLACK,COLOR_YELLOW))},
+    {"grass_floor" , InfoGenericObject(RenderInfo(COLOR_GREEN))},
+    {"stone_floor" , InfoGenericObject(RenderInfo(COLOR_WHITE))}
 };
 
 
@@ -90,20 +104,21 @@ class Cell
     {
         InfoGenericObject object = object_cell.GetInfo();
         InfoGenericObject floor_i = floor_object.GetInfo();
-        InfoGenericObject render(object.sign,object.fg,object.bg);
-        if (object.sign == " ")
+        bool is_pass = object.is_pass && floor_i.is_pass;
+        InfoGenericObject ret_render(object.render,is_pass);
+        if (object.render.sign == " ")
         {
-            render.sign = floor_i.sign;
+            ret_render.render.sign = floor_i.render.sign;
         }
-        if (object.fg <= -1)
+        if (object.render.fg <= -1)
         {
-            render.fg = floor_i.fg;
+            ret_render.render.fg = floor_i.render.fg;
         }
-        if (object.bg <= -1)
+        if (object.render.bg <= -1)
         {
-            render.bg = floor_i.bg;
+            ret_render.render.bg = floor_i.render.bg;
         }
-        return render;
+        return ret_render;
     }
 };
 class GenericFeature
@@ -174,20 +189,27 @@ class Biome
 
 std::map<std::string,Biome> biome_info = {
     {"none", Biome()}, //"none" is debug biome, 2 cant be reached by noise functions
-    {"desert", Biome("sand",0.5)},
-    {"plains", Biome("grass_floor",-1,{GenericFeature(0.5,GenericObject("grass"))})},
-    {"stone_desert", Biome("stone_floor",0.7)} 
+    {"desert", Biome("sand",0.2)},
+    {"plains", Biome("grass_floor",-1,{
+        GenericFeature(0.5,GenericObject("grass")),
+        GenericFeature(0.02,GenericObject("stone"))
+        })},
+    {"stone_desert", Biome("stone_floor",0.7,
+    {
+        GenericFeature(0.04,GenericObject("stone")),
+        GenericFeature(0.02,GenericObject("iron")),
+        GenericFeature(0.02,GenericObject("copper"))
+    })} 
 };
 
 
 //WORLD STRUCTURE
 
-
 class Chunk
 {
     public:
         static constexpr float SCALING_CH = 4;
-        static const int CHUNK_SIZE = 4;
+        static const int CHUNK_SIZE = 16;
         Cell chunk_data[CHUNK_SIZE][CHUNK_SIZE];
     Chunk(int ch_y, int ch_x,FastNoise map_noise)
     {
@@ -224,7 +246,6 @@ class Chunk
     }
     Cell GenerateCell(int y_, int x_,FastNoise map_noise)
     {
-
         Cell new_cell;
         
         float noise_value = map_noise.GetNoise(float(x_)*SCALING_CH,float(y_)*SCALING_CH); 
@@ -258,6 +279,10 @@ class Chunk
     {
         return chunk_data[ToLocalPos(y_)][ToLocalPos(x_)];
     }
+    void SetCell(int y_,int x_,GenericObject setted_object)
+    {
+        chunk_data[ToLocalPos(y_)][ToLocalPos(x_)].object_cell.object_name = setted_object.object_name;
+    }
 };
 class WorldMap
 {
@@ -273,30 +298,49 @@ class WorldMap
         srand(123);
         map_noise.SetSeed(123);
     }
-    Chunk GenerateChunk(int ch_y, int ch_x)
+    Chunk *GenerateChunk(int ch_y, int ch_x)
     {
         Chunk new_chunk = Chunk(ch_y,ch_x,map_noise);
         world_chunk_data[{ch_y,ch_x}] = new_chunk;
-        return new_chunk;
+        return &world_chunk_data[{ch_y,ch_x}];
     }
-    Chunk GetChunk(int ch_y, int ch_x)
+    Chunk *GetChunk(int ch_y, int ch_x)
     {
-        return world_chunk_data[{ch_y,ch_x}];
+        return &world_chunk_data[{ch_y,ch_x}];
+    }
+    bool FindChunk(int ch_y, int ch_x)
+    {
+        return world_chunk_data.find({ch_y,ch_x}) != world_chunk_data.end();
     }
     Cell GetCell(int y_, int x_)
     {
-        int ch_y = std::floor(float(y_)/Chunk::CHUNK_SIZE);
-        int ch_x = std::floor(float(x_)/Chunk::CHUNK_SIZE);
-        if (world_chunk_data.find({ch_y,ch_x}) != world_chunk_data.end())
+        int ch_y = GetChunkPos(y_);
+        int ch_x = GetChunkPos(x_);
+        if (FindChunk(ch_y,ch_x))
         {
-            return GetChunk(ch_y,ch_x).GetCell(y_,x_);
+            return GetChunk(ch_y,ch_x)->GetCell(y_,x_);
         }
         if(generate_world)
         {
-            return GenerateChunk(ch_y,ch_x).GetCell(y_,x_);
+            return GenerateChunk(ch_y,ch_x)->GetCell(y_,x_);
         }
         
         return Cell();
+    }
+    bool SetCellObject(int y_, int x_,GenericObject setted_object)
+    {
+        int ch_y = GetChunkPos(y_);
+        int ch_x = GetChunkPos(x_);
+        if(FindChunk(ch_y,ch_x))
+        {
+            GetChunk(ch_y,ch_x)->SetCell(y_,x_,setted_object);
+            return true;
+        }
+        return false;
+    }
+    int GetChunkPos(int n)
+    {
+        return std::floor(float(n)/Chunk::CHUNK_SIZE);
     }
     
 };

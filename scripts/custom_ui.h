@@ -12,21 +12,40 @@ void print_centered_text(WINDOW *window_p, int y, const char *text , int fg, int
 {
     color_print(y,(window_p->_maxx-strlen(text))/2,text,fg,bg,window_p);
 }
-class UIMenu
+class BaseUI
 {
     public:
         WINDOW *window;
         PANEL *panel;
-        int selected_option = 0;
-        std::vector<std::string> options;
-        bool free_scrool = false;
-        bool is_focused = false;
-
-    UIMenu(int size_y, int size_x,int pos_y = 0 , int pos_x= 0)
+    BaseUI(int size_y, int size_x,int pos_y = 0 , int pos_x= 0)
     {
         window = newwin(size_y, size_x, pos_y, pos_x);
         panel = new_panel(window);
         hide();
+    }
+    void hide()
+    {
+        hide_panel(panel);
+        wnoutrefresh(window);
+    }
+    void show()
+    {
+        show_panel(panel);
+        wnoutrefresh(window);
+    }
+};
+class UIMenu : public BaseUI
+{
+    public:
+        int selected_option = 0;
+        std::vector<std::string> options;
+        bool free_scrool = false;
+        bool is_focused = false;
+        bool keep_centered = true;
+
+    UIMenu(int size_y, int size_x,int pos_y = 0 , int pos_x= 0) : BaseUI(size_y,size_x,pos_y,pos_x)
+    {
+        
     }
     void center_menu()
     {  
@@ -48,18 +67,10 @@ class UIMenu
         }
         
     }    
-    void hide()
-    {
-        hide_panel(panel);
-        wnoutrefresh(window);
-    }
-    void show()
-    {
-        show_panel(panel);
-        wnoutrefresh(window);
-    }
+    
     void render_menu()
     {
+        wclear(window);
         show();
         box(window, 0, 0);
         for (int i = 0; i < options.size(); i++)
@@ -68,7 +79,15 @@ class UIMenu
             {
                 wattron(window,A_STANDOUT);
             }
-            print_centered_text(window,2+i, options[i].c_str(),COLOR_WHITE,COLOR_BLACK);
+            if(keep_centered)
+            {
+                print_centered_text(window,2+i, options[i].c_str(),COLOR_WHITE,COLOR_BLACK);
+            }
+            else
+            {
+                color_print(2+i,2,options[i].c_str(),COLOR_WHITE,COLOR_BLACK,window);
+            }   
+            
             if (i==selected_option)
             {
                 wattroff(window,A_STANDOUT);
@@ -100,8 +119,27 @@ class InventoryMenu : public UIMenu
         for (int i = 0; i < inv.inv.size(); i++)
         {
             options.push_back(inv.inv[i].name);
+            if (inv.inv[i].count > 1)
+            {
+                options[i] += " " + std::to_string(inv.inv[i].count);  
+            }
         }
     }
 };
+/*
+class UIBar
+{
+    WINDOW *window;
+    PANEL *panel;
+    int max_valie;
+    int value;
+    UIBar(int size_y, int size_x,int pos_y, int pos_x)
+    {
+        window = newwin(size_y,size_x,pos_y,pos_x);
+        panel = new_panel(window);
+        hide();
+    }
+
+}*/
 
 #endif
