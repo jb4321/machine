@@ -98,7 +98,7 @@ std::map<std::string,Crafting> crafting_info = {
     {"Tin Drill",Crafting({Item("Tin Ingot",6)},20,0)},
     {"Steel Drill",Crafting({Item("Steel Ingot",5),Item("Copper Wires",5)},30,1)},
 
-    {"Rocket",Crafting({Item("Titan Ingot",10),Item("Steel Ingot",10),Item("Copper Wires",20),Item("Oil",10),Item("Tin",10)},50,{Item("Rocket",1)})}
+    {"Rocket",Crafting({Item("Titan Ingot",10),Item("Steel Ingot",10),Item("Copper Wires",20),Item("Oil",10),Item("Tin Ingot",10)},50,{Item("Rocket",1)})}
 
 
 };
