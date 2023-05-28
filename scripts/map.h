@@ -3,7 +3,7 @@
 
 #include "color_handling.h"
 #include "FastNoise.h"
-
+#include <ctime>
 
 class RenderInfo
 {
@@ -64,18 +64,23 @@ std::map<std::string,InfoGenericObject> object_info_table = {
     {"none", InfoGenericObject()},
     {"cya", InfoGenericObject(RenderInfo("$",COLOR_BLACK,COLOR_CYAN))}, 
     {"default" , InfoGenericObject(RenderInfo("χ",COLOR_BLACK,COLOR_WHITE))},
-    {"grass" , InfoGenericObject(RenderInfo("░",COLOR_YELLOW))},
-    {"acid_flower" , InfoGenericObject(RenderInfo("A",COLOR_CYAN))},
-    {"stone" , InfoGenericObject(RenderInfo("⌂",COLOR_BLACK,COLOR_WHITE),false,1)},
-    {"iron" , InfoGenericObject(RenderInfo("I",COLOR_BLACK,COLOR_WHITE),false,0)},
-    {"copper" , InfoGenericObject(RenderInfo("C",COLOR_RED,COLOR_WHITE),false,1)},
-    {"oil" , InfoGenericObject(RenderInfo("O",COLOR_RED,COLOR_BLACK),false,2)},
-    {"titan" , InfoGenericObject(RenderInfo("T",COLOR_BLACK,COLOR_WHITE),false,2)},
+    {"Grass" , InfoGenericObject(RenderInfo("▒",COLOR_YELLOW))},
+    {"Tree" , InfoGenericObject(RenderInfo("T",COLOR_BLACK))},
+    {"Acid Flower" , InfoGenericObject(RenderInfo("A",COLOR_CYAN))},
+
+    {"Tin" , InfoGenericObject(RenderInfo("L",COLOR_MAGENTA,COLOR_WHITE),false,0)},
+    {"Coal" , InfoGenericObject(RenderInfo("F",COLOR_BLACK,COLOR_WHITE),false,1)},
+    {"Copper" , InfoGenericObject(RenderInfo("C",COLOR_RED,COLOR_WHITE),false,1)},
+    {"Stone" , InfoGenericObject(RenderInfo("⌂",COLOR_BLACK,COLOR_WHITE),false,1)},
+    {"Iron" , InfoGenericObject(RenderInfo("I",COLOR_BLACK,COLOR_WHITE),false,0)},
+    {"Oil" , InfoGenericObject(RenderInfo("O",COLOR_RED,COLOR_BLACK),false,2)},
+    {"Titan" , InfoGenericObject(RenderInfo("T",COLOR_CYAN,COLOR_WHITE),false,2)},
 
     //FLOORS
     {"sand" , InfoGenericObject(RenderInfo("░",COLOR_BLACK,COLOR_YELLOW))},
     {"grass_floor" , InfoGenericObject(RenderInfo(COLOR_GREEN))},
-    {"stone_floor" , InfoGenericObject(RenderInfo(COLOR_WHITE))}
+    {"stone_floor" , InfoGenericObject(RenderInfo(COLOR_WHITE))},
+    {"titan_floor" , InfoGenericObject(RenderInfo("░",COLOR_WHITE,COLOR_BLACK))}
 };
 
 
@@ -195,20 +200,32 @@ class Biome
 
 std::map<std::string,Biome> biome_info = {
     {"none", Biome()}, //"none" is debug biome, 2 cant be reached by noise functions
-    {"desert", Biome("sand",0.2,{
-        GenericFeature(0.01,GenericObject("oil"))
-    })},
-    {"plains", Biome("grass_floor",-1,{
-        GenericFeature(0.5,GenericObject("grass")),
-        GenericFeature(0.02,GenericObject("stone")),
-        GenericFeature(0.005,GenericObject("acid_flower"))
+    
+    {"tin_desert", Biome("stone_floor",-1,{
+        GenericFeature(0.02,GenericObject("Coal")),
+        GenericFeature(0.05,GenericObject("Tin"))
         })},
-    {"stone_desert", Biome("stone_floor",0.7,
+    {"plains", Biome("grass_floor",-0.8,{
+        GenericFeature(0.5,GenericObject("Grass")),
+        GenericFeature(0.02,GenericObject("Tree")),
+        GenericFeature(0.004,GenericObject("Tin"))
+        })},
+    {"desert", Biome("sand",-0.2,{
+        GenericFeature(0.01,GenericObject("Oil")),
+        GenericFeature(0.02,GenericObject("Copper"))
+    })},
+    {"stone_desert", Biome("stone_floor",0.6,
     {
-        GenericFeature(0.04,GenericObject("stone")),
-        GenericFeature(0.1,GenericObject("iron")),
-        GenericFeature(0.02,GenericObject("copper"))
-    })} 
+        GenericFeature(0.01,GenericObject("Tin")),
+        GenericFeature(0.02,GenericObject("Iron")),
+        GenericFeature(0.02,GenericObject("Coal")),
+        GenericFeature(0.01,GenericObject("Copper"))
+    })},
+    {"titan_desert", Biome("stone_floor",0.8,
+    {
+        GenericFeature(0.04,GenericObject("Titan")),
+        GenericFeature(0.02,GenericObject("Coal"))
+    })}  
 };
 
 
@@ -217,7 +234,7 @@ std::map<std::string,Biome> biome_info = {
 class Chunk
 {
     public:
-        static constexpr float SCALING_CH = 4;
+        static constexpr float SCALING_CH = 1;
         static const int CHUNK_SIZE = 16;
         Cell chunk_data[CHUNK_SIZE][CHUNK_SIZE];
     Chunk(int ch_y, int ch_x,FastNoise map_noise)
@@ -304,8 +321,9 @@ class WorldMap
 
     WorldMap()
     {
-        srand(123);
-        map_noise.SetSeed(123);
+        int seed = time(NULL);
+        srand(seed);
+        map_noise.SetSeed(seed);
     }
     Chunk *GenerateChunk(int ch_y, int ch_x)
     {

@@ -15,9 +15,9 @@ class Player
         int y;
         int x;
         int ener;
-        int ener_max = 200;
+        int ener_max = 150;
         int ener_drain = 1;
-        const char *sign = "☼";
+        const char *sign = "@";
         Inventory inv;
         int tool_tier;
     
@@ -30,23 +30,17 @@ class Player
         x = x_;
 
     }
+    void UpgradeTool(){
+        tool_tier += 1;
+    }
     void Mine()
     {
 
     }
-    bool ChangeEner(int ener_value)
+    void ChangeEner(int ener_value)
     {
         int n_ener = ener - ener_value;
-        if(n_ener <= 0)
-        {
-            return false;
-        }
-        if(n_ener > ener_max)
-        {
-            return false;
-        }
         ener = n_ener;
-        return true;
     }
     void Move(int dy,int dx,WorldMap *mapa,bool mining_mode = false)
     {
@@ -58,8 +52,10 @@ class Player
         {
             if(kom.object_cell.GetInfo().tool_tier <= tool_tier)
             {
+                ener -= kom.get_info().tool_tier *2;
                 mapa->SetCellObject(ny,nx,GenericObject());
                 inv.AddItem(Item(kom.object_cell.object_name,1));
+                
             }   
         }
 

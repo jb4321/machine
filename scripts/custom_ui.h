@@ -17,7 +17,7 @@ class BaseUI
     public:
         WINDOW *window;
         PANEL *panel;
-    BaseUI(int size_y, int size_x,int pos_y = 0 , int pos_x= 0)
+    BaseUI(int size_y=1 , int size_x=1,int pos_y = 0 , int pos_x= 0)
     {
         window = newwin(size_y, size_x, pos_y, pos_x);
         panel = new_panel(window);
@@ -43,7 +43,7 @@ class UIMenu : public BaseUI
         bool is_focused = false;
         bool keep_centered = true;
 
-    UIMenu(int size_y, int size_x,int pos_y = 0 , int pos_x= 0) : BaseUI(size_y,size_x,pos_y,pos_x)
+    UIMenu(int size_y =1, int size_x=1,int pos_y = 0 , int pos_x= 0) : BaseUI(size_y,size_x,pos_y,pos_x)
     {
         
     }
@@ -109,7 +109,7 @@ class UIMenu : public BaseUI
 class InventoryMenu : public UIMenu
 {
     public:
-    InventoryMenu(int size_y, int size_x,int pos_y = 0 , int pos_x= 0) : UIMenu(size_y,size_x,pos_y,pos_x)
+    InventoryMenu(int size_y=1, int size_x=1,int pos_y = 0 , int pos_x= 0) : UIMenu(size_y,size_x,pos_y,pos_x)
     {
         
     }
@@ -132,7 +132,7 @@ class UIBar : public BaseUI
     public:
         int bg;
         int fg;
-    UIBar(int size_y, int size_x,int pos_y, int pos_x): BaseUI(size_y,size_x,pos_y,pos_x)
+    UIBar(int size_y=1, int size_x=1,int pos_y=0, int pos_x=0): BaseUI(size_y,size_x,pos_y,pos_x)
     {
         
     }
@@ -146,30 +146,35 @@ class UIBar : public BaseUI
         {
             color_print(1,i,"▒",COLOR_WHITE,COLOR_BLACK,window);
         }
+        int fg_color = COLOR_CYAN;
+        if(value <= 30)
+        {
+            fg_color = COLOR_RED;
+        }
         std::string txt = std::to_string(value) + "/" + std::to_string(max_value);
-        color_print(1,1,txt.c_str(),COLOR_CYAN,COLOR_BLACK,window);
+        color_print(1,1,txt.c_str(),fg_color,COLOR_BLACK,window);
         float amount = ((float)value/(float)max_value) * (window->_maxx-2);
         int flr_amount = std::floor(amount);
         for (int i = 0;i < flr_amount;i++)
         {
-            color_print(0,1+i," ",COLOR_BLACK,COLOR_CYAN,window);
+            color_print(0,1+i," ",COLOR_BLACK,fg_color,window);
         }
         //░▒▓
         if (amount - flr_amount > 0.8)
         {
-            color_print(0,flr_amount +1 ,"░",COLOR_BLACK,COLOR_CYAN,window);
+            color_print(0,flr_amount +1 ,"░",COLOR_BLACK,fg_color,window);
         }
         else if(amount - flr_amount > 0.6)
         {
-            color_print(0,flr_amount +1 ,"▒",COLOR_BLACK,COLOR_CYAN,window);
+            color_print(0,flr_amount +1 ,"▒",COLOR_BLACK,fg_color,window);
         }
         else if(amount - flr_amount > 0.4)
         {
-            color_print(0,flr_amount +1 ,"▒",COLOR_CYAN,COLOR_BLACK,window);
+            color_print(0,flr_amount +1 ,"▒",fg_color,COLOR_BLACK,window);
         }
         else if(amount - flr_amount > 0.2)
         {
-            color_print(0,flr_amount +1 ,"░",COLOR_CYAN,COLOR_BLACK,window);
+            color_print(0,flr_amount +1 ,"░",fg_color,COLOR_BLACK,window);
         }
         update_panels();
         wnoutrefresh(window);

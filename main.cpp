@@ -39,7 +39,7 @@ int term_x = 60;
 int term_y = 30;
 WorldMap world_map;
 
-int game_state = 2;
+int game_state = 0;
 int sel_option = 0;
 
 bool is_paused = false;
@@ -116,15 +116,15 @@ void RenderGame()
 
 void GameLoop()
 {
-    UIBar ener_bar = UIBar(2,10,0,10);
+    UIBar ener_bar = UIBar(2,17,0,10);
 
-
+    
     UIMenu ui_menu = UIMenu(12,14);
-    ui_menu.options = {"START GAME","OPTIONS","QUIT"};
+    ui_menu.options = {"START GAME","QUIT"};
     ui_menu.center_menu();
 
     UIMenu pause_menu = UIMenu(12,14);
-    pause_menu.options = {"CONTINUE","OPTIONS","MAIN MENU","QUIT"};
+    pause_menu.options = {"CONTINUE","MAIN MENU","QUIT"};
     pause_menu.center_menu();
 
     InventoryMenu inv_menu = InventoryMenu(24,20);
@@ -136,7 +136,7 @@ void GameLoop()
     craft_menu.center_menu();
     craft_menu.free_scrool = true;
 
-    bool mining_mode = false;
+    bool mining_mode = true;
     doupdate();
     
     do
@@ -150,9 +150,6 @@ void GameLoop()
         switch (key)
         {
             case ' ':
-                break;
-            case 'f':
-                mining_mode = !mining_mode;
                 break;
             case KEY_UP:
                 ny--;
@@ -188,8 +185,6 @@ void GameLoop()
                             RenderGame();
                             break;
                         case 1:
-                            break;
-                        case 2:
                             End();
                         default:
                             break;
@@ -249,14 +244,14 @@ void GameLoop()
                                 goto game_focus;
                                 break;
                             case 1:
-                                break;
-                            case 2:
                                 game_state = 0;
                                 pause_menu.hide();
                                 wclear(stdscr);
+                                player_char = Player();
+                                world_map = WorldMap();
                                 ui_menu.render_ui();
                                 break;
-                            case 3:
+                            case 2:
                                 End();
                             default:
                                 break;
@@ -277,6 +272,23 @@ void GameLoop()
                         craft_menu.option_craft(&player_char);
                         ener_bar.render_ui(player_char.ener,player_char.ener_max);
                         craft_menu.render_ui();
+                        if (player_char.inv.getIndex(Item("Rocket")) != -1 )
+                        {
+                            std::string txt = "CONGRATULATIONS!";
+                            print_centered_text(stdscr,LINES/2,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                            txt = "YOU COMPLETED GAME";
+                            print_centered_text(stdscr,LINES/2+1,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                            txt = "THANKS FOR PLAYING";
+                            print_centered_text(stdscr,LINES/2+2,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                            getch();
+                            ener_bar.hide();            
+                            game_state = 0;
+                            pause_menu.hide();
+                            wclear(stdscr);
+                            world_map = WorldMap();
+                            player_char = Player();
+                            ui_menu.render_ui();
+                        }
                     }
                     if(key == 'c'|| key==27)
                     {
@@ -314,10 +326,44 @@ void GameLoop()
                     
                     std::string txt = std::to_string(player_char.x) + "," + std::to_string(player_char.y);
                     color_print(0,0,txt.c_str(),COLOR_RED,COLOR_WHITE);
+                    color_print(1,0,std::to_string(player_char.tool_tier).c_str(),COLOR_CYAN,COLOR_WHITE);
 
                     move(term_y/2,term_x/2);
                     
                     ener_bar.render_ui(player_char.ener,player_char.ener_max);
+                    if (player_char.inv.getIndex(Item("Rocket")) != -1 )
+                    {
+                        txt = "CONGRATULATIONS!";
+                        print_centered_text(stdscr,LINES/2,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                        txt = "YOU COMPLETED GAME";
+                        print_centered_text(stdscr,LINES/2+1,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                        txt = "THANKS FOR PLAYING";
+                        print_centered_text(stdscr,LINES/2+2,txt.c_str(),COLOR_YELLOW,COLOR_BLACK);
+                        getch();
+                        ener_bar.hide();            
+                        game_state = 0;
+                        pause_menu.hide();
+                        wclear(stdscr);
+                        world_map = WorldMap();
+                        player_char = Player();
+                        ui_menu.render_ui();
+                    }
+                    if(player_char.ener <= 0)
+                    {
+                        txt = "BATTERY RUN OUT";
+                        print_centered_text(stdscr,LINES/2,txt.c_str(),COLOR_RED,COLOR_BLACK);
+                        refresh();
+	                    doupdate();
+                        sleep(1000);
+                        getch();
+                        ener_bar.hide();            
+                        game_state = 0;
+                        pause_menu.hide();
+                        wclear(stdscr);
+                        world_map = WorldMap();
+                        player_char = Player();
+                        ui_menu.render_ui();
+                    }
                 }
                 
                 break;

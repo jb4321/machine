@@ -18,17 +18,32 @@ class Crafting
         int max_ener_add;
         int ener_use;
         std::vector<Item> crafted;
+        int tier;
     Crafting(std::vector<Item> ingrd_, int ener_use_, std::vector<Item> crafted_ = {}, int max_ener_add_ = 0 )
     {
         ingrd = ingrd_;
         ener_use = ener_use_;
         crafted = crafted_;
         max_ener_add = max_ener_add_;
+        tier = -1;
+        
+    }
+    Crafting(std::vector<Item> ingrd_, int ener_use_, int tier_)
+    {
+        ingrd = ingrd_;
+        ener_use = ener_use_;
+        tier = tier_;
+        crafted = {};
+        max_ener_add = 0;
         
     }
     bool CanCraft(Player *player)
     {
         if (player->ener - ener_use <= 0)
+        {
+            return false;
+        }
+        if (player->ener - ener_use > player->ener_max)
         {
             return false;
         }
@@ -46,6 +61,10 @@ class Crafting
     {
         if(CanCraft(player))
         {
+            if(tier != -1 && player->tool_tier!=tier)
+            {
+                return;
+            }
             for (int i = 0; i < ingrd.size(); i++)
             {
                 Item ing_item = ingrd[i];
@@ -53,6 +72,10 @@ class Crafting
                 player->inv.removeItem(ing_item);
             }
             player->ChangeEner(ener_use);
+            if(player->tool_tier == tier)
+            {
+                player->UpgradeTool();
+            }
             for (int i = 0; i < crafted.size(); i++)
             {
                 player->inv.AddItem(crafted[i]);
@@ -62,14 +85,28 @@ class Crafting
     }
 };
 std::map<std::string,Crafting> crafting_info = {
-    {"Grass Burn",Crafting({Item("grass",7)},-10)},
-    {"Melt Iron",Crafting({Item("iron",3)},10,{Item("iron_bar",1)})}
+    {"! Grass Burn",Crafting({Item("Grass",7)},-10)},
+    {"! Tree Burn",Crafting({Item("Tree",1)},-10)},
+    {"! Coal Burn",Crafting({Item("Coal",1)},-15)},
+    {"! Oil Burn",Crafting({Item("Oil",1)},-25)},
+
+    {"Melt Tin",Crafting({Item("Tin",3)},5,{Item("Tin Ingot",1)})},
+    {"Forge Steel",Crafting({Item("Iron",2),Item("Coal",1)},10,{Item("Steel Ingot",1)})},
+    {"Copper Wires",Crafting({Item("Copper",2)},10,{Item("Copper Wires",1)})},
+    {"Melt Titan",Crafting({Item("Titan",3)},10,{Item("Titan Ingot",1)})},
+
+    {"Tin Drill",Crafting({Item("Tin Ingot",6)},20,0)},
+    {"Steel Drill",Crafting({Item("Steel Ingot",5),Item("Copper Wires",5)},30,1)},
+
+    {"Rocket",Crafting({Item("Titan Ingot",10),Item("Steel Ingot",10),Item("Copper Wires",20),Item("Oil",10),Item("Tin",10)},50,{Item("Rocket",1)})}
+
+
 };
 
 class UICraft : public UIMenu
 {
     public:
-    UICraft(int size_y, int size_x,int pos_y = 0 , int pos_x= 0) : UIMenu(size_y,size_x,pos_y,pos_x)
+    UICraft(int size_y=1, int size_x=1,int pos_y = 0 , int pos_x= 0) : UIMenu(size_y,size_x,pos_y,pos_x)
     {
         
     }
@@ -101,6 +138,7 @@ class UICraft : public UIMenu
                 pushed.append("N ");
             }
             pushed.append(x.first);
+            pushed.append(" "+ std::to_string(x.second.ener_use*-1));
             options.push_back(pushed);
         }
     }
