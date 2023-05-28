@@ -37,10 +37,13 @@ class InfoGenericObject
     public:
         RenderInfo render;
         bool is_pass;
-    InfoGenericObject(RenderInfo render_, bool is_pass_ = true)
+        int tool_tier;
+
+    InfoGenericObject(RenderInfo render_, bool is_pass_ = true,int tool_tier_ = 0)
     {
         render = render_;
         is_pass = is_pass_;
+        tool_tier = tool_tier_;
     }
     InfoGenericObject()
     {
@@ -62,9 +65,12 @@ std::map<std::string,InfoGenericObject> object_info_table = {
     {"cya", InfoGenericObject(RenderInfo("$",COLOR_BLACK,COLOR_CYAN))}, 
     {"default" , InfoGenericObject(RenderInfo("χ",COLOR_BLACK,COLOR_WHITE))},
     {"grass" , InfoGenericObject(RenderInfo("░",COLOR_YELLOW))},
-    {"stone" , InfoGenericObject(RenderInfo("⌂",COLOR_BLACK,COLOR_WHITE),false)},
-    {"iron" , InfoGenericObject(RenderInfo("I",COLOR_BLACK,COLOR_WHITE),false)},
-    {"copper" , InfoGenericObject(RenderInfo("C",COLOR_RED,COLOR_WHITE),false)},
+    {"acid_flower" , InfoGenericObject(RenderInfo("A",COLOR_CYAN))},
+    {"stone" , InfoGenericObject(RenderInfo("⌂",COLOR_BLACK,COLOR_WHITE),false,1)},
+    {"iron" , InfoGenericObject(RenderInfo("I",COLOR_BLACK,COLOR_WHITE),false,0)},
+    {"copper" , InfoGenericObject(RenderInfo("C",COLOR_RED,COLOR_WHITE),false,1)},
+    {"oil" , InfoGenericObject(RenderInfo("O",COLOR_RED,COLOR_BLACK),false,2)},
+    {"titan" , InfoGenericObject(RenderInfo("T",COLOR_BLACK,COLOR_WHITE),false,2)},
 
     //FLOORS
     {"sand" , InfoGenericObject(RenderInfo("░",COLOR_BLACK,COLOR_YELLOW))},
@@ -189,15 +195,18 @@ class Biome
 
 std::map<std::string,Biome> biome_info = {
     {"none", Biome()}, //"none" is debug biome, 2 cant be reached by noise functions
-    {"desert", Biome("sand",0.2)},
+    {"desert", Biome("sand",0.2,{
+        GenericFeature(0.01,GenericObject("oil"))
+    })},
     {"plains", Biome("grass_floor",-1,{
         GenericFeature(0.5,GenericObject("grass")),
-        GenericFeature(0.02,GenericObject("stone"))
+        GenericFeature(0.02,GenericObject("stone")),
+        GenericFeature(0.005,GenericObject("acid_flower"))
         })},
     {"stone_desert", Biome("stone_floor",0.7,
     {
         GenericFeature(0.04,GenericObject("stone")),
-        GenericFeature(0.02,GenericObject("iron")),
+        GenericFeature(0.1,GenericObject("iron")),
         GenericFeature(0.02,GenericObject("copper"))
     })} 
 };

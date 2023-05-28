@@ -68,7 +68,7 @@ class UIMenu : public BaseUI
         
     }    
     
-    void render_menu()
+    virtual void render_ui()
     {
         wclear(window);
         show();
@@ -99,7 +99,7 @@ class UIMenu : public BaseUI
     void focus()
     {
         is_focused = true;
-        render_menu();
+        render_ui();
     }
     void unfocus()
     {
@@ -126,20 +126,55 @@ class InventoryMenu : public UIMenu
         }
     }
 };
-/*
-class UIBar
+
+class UIBar : public BaseUI
 {
-    WINDOW *window;
-    PANEL *panel;
-    int max_valie;
-    int value;
-    UIBar(int size_y, int size_x,int pos_y, int pos_x)
+    public:
+        int bg;
+        int fg;
+    UIBar(int size_y, int size_x,int pos_y, int pos_x): BaseUI(size_y,size_x,pos_y,pos_x)
     {
-        window = newwin(size_y,size_x,pos_y,pos_x);
-        panel = new_panel(window);
-        hide();
+        
+    }
+    void render_ui(int value, int max_value)
+    {
+        wclear(window);
+        show();
+        color_print(0,0,"▒",COLOR_WHITE,COLOR_BLACK,window);
+        color_print(0,window->_maxx-1,"▒",COLOR_WHITE,COLOR_BLACK,window);
+        for (int i = 0; i < window->_maxx; i++)
+        {
+            color_print(1,i,"▒",COLOR_WHITE,COLOR_BLACK,window);
+        }
+        std::string txt = std::to_string(value) + "/" + std::to_string(max_value);
+        color_print(1,1,txt.c_str(),COLOR_CYAN,COLOR_BLACK,window);
+        float amount = ((float)value/(float)max_value) * (window->_maxx-2);
+        int flr_amount = std::floor(amount);
+        for (int i = 0;i < flr_amount;i++)
+        {
+            color_print(0,1+i," ",COLOR_BLACK,COLOR_CYAN,window);
+        }
+        //░▒▓
+        if (amount - flr_amount > 0.8)
+        {
+            color_print(0,flr_amount +1 ,"░",COLOR_BLACK,COLOR_CYAN,window);
+        }
+        else if(amount - flr_amount > 0.6)
+        {
+            color_print(0,flr_amount +1 ,"▒",COLOR_BLACK,COLOR_CYAN,window);
+        }
+        else if(amount - flr_amount > 0.4)
+        {
+            color_print(0,flr_amount +1 ,"▒",COLOR_CYAN,COLOR_BLACK,window);
+        }
+        else if(amount - flr_amount > 0.2)
+        {
+            color_print(0,flr_amount +1 ,"░",COLOR_CYAN,COLOR_BLACK,window);
+        }
+        update_panels();
+        wnoutrefresh(window);
     }
 
-}*/
+};
 
 #endif

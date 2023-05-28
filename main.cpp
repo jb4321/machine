@@ -15,6 +15,8 @@
 #include "scripts/color_handling.h"
 #include "scripts/player.h"
 #include "scripts/custom_ui.h"
+#include "scripts/craft.h"
+
 #ifdef _WIN32
     #include <windows.h>
 
@@ -108,11 +110,15 @@ void RenderGame()
             color_print(i, j ,w_info.sign,w_info.fg,w_info.bg);
         }    
     }
+    wnoutrefresh(stdscr);
     
 }
 
 void GameLoop()
 {
+    UIBar ener_bar = UIBar(2,10,0,10);
+
+
     UIMenu ui_menu = UIMenu(12,14);
     ui_menu.options = {"START GAME","OPTIONS","QUIT"};
     ui_menu.center_menu();
@@ -126,10 +132,13 @@ void GameLoop()
     inv_menu.free_scrool = true;
     inv_menu.keep_centered = false;
 
-    ui_menu.render_menu();
+    UICraft craft_menu = UICraft(20,30);
+    craft_menu.center_menu();
+    craft_menu.free_scrool = true;
 
     bool mining_mode = false;
     doupdate();
+    
     do
     {   
         int ny=0;
@@ -146,9 +155,6 @@ void GameLoop()
                 mining_mode = !mining_mode;
                 break;
             case KEY_UP:
-                ny--;
-                break;
-            case ctl(KEY_UP):
                 ny--;
                 break;
             case KEY_DOWN:
@@ -171,13 +177,14 @@ void GameLoop()
             case 0:
             {
                 ui_menu.scroll_option_list(ny);
-                ui_menu.render_menu();
+                ui_menu.render_ui();
                 if (key == 10)
                 {
                     switch (ui_menu.selected_option)
                     {
                         case 0:
                             game_state = 2;
+                            ui_menu.hide();
                             RenderGame();
                             break;
                         case 1:
@@ -191,12 +198,12 @@ void GameLoop()
                 break;
             }
             case 2:
-                
+            {
                 if(inv_menu.is_focused)
                 {
                     inv_menu.scroll_option_list(ny);
                     inv_menu.option_inventory(player_char.inv);
-                    inv_menu.render_menu();
+                    inv_menu.render_ui();
                     
                     if(key == 10)
                     {
@@ -217,26 +224,29 @@ void GameLoop()
                             }
                         }*/
                         inv_menu.option_inventory(player_char.inv);
-                        inv_menu.render_menu();
+                        inv_menu.render_ui();
+                        goto game_focus;
                     }
-                    if(key == 105|| key==27)
+                    if(key =='e'|| key==27)
                     {
                         inv_menu.unfocus();
                         inv_menu.hide();
+                        goto game_focus;
                     }
                 }
                 else if(pause_menu.is_focused)
                 {
                     
                     pause_menu.scroll_option_list(ny);
-                    pause_menu.render_menu();
-                    std::cout << key;
+                    pause_menu.render_ui();
                     if (key == 10) //ENTER character
                     {
                         switch (pause_menu.selected_option)
                         {
                             case 0:
                                 pause_menu.hide();
+                                pause_menu.unfocus();
+                                goto game_focus;
                                 break;
                             case 1:
                                 break;
@@ -244,7 +254,7 @@ void GameLoop()
                                 game_state = 0;
                                 pause_menu.hide();
                                 wclear(stdscr);
-                                ui_menu.render_menu();
+                                ui_menu.render_ui();
                                 break;
                             case 3:
                                 End();
@@ -255,31 +265,64 @@ void GameLoop()
                         pause_menu.hide();
                     }
                 }
+                else if(craft_menu.is_focused)
+                {
+                    craft_menu.scroll_option_list(ny);
+                    craft_menu.option_craft(&player_char);
+                    craft_menu.render_ui();
+                    
+                    if(key == 10)
+                    {
+                        craft_menu.craft_select(&player_char);
+                        craft_menu.option_craft(&player_char);
+                        ener_bar.render_ui(player_char.ener,player_char.ener_max);
+                        craft_menu.render_ui();
+                    }
+                    if(key == 'c'|| key==27)
+                    {
+                        craft_menu.unfocus();
+                        craft_menu.hide();
+                        goto game_focus;
+                    }
+                }
                 else if(key ==27) //ESC character
                 {
                     pause_menu.focus();
                 }
-                else if(key == 105) // "i" character
+                else if(key == 'e')
                 {
                     inv_menu.option_inventory(player_char.inv);
                     inv_menu.focus();
                 }
+                else if(key == 'c')
+                {
+                    craft_menu.option_craft(&player_char);
+                    craft_menu.focus();
+                }
                 else 
                 {
-                    player_char.Move(ny,nx,&world_map,mining_mode);
+                    game_focus:
+                    if(ny !=0 || nx !=0)
+                    {
+                        player_char.Move(ny,nx,&world_map,mining_mode);
+                    }
+                    
                       
 
                     RenderGame();
                     mvprintw(term_y/2,term_x/2,player_char.sign);
-                
+                    
                     std::string txt = std::to_string(player_char.x) + "," + std::to_string(player_char.y);
                     color_print(0,0,txt.c_str(),COLOR_RED,COLOR_WHITE);
 
                     move(term_y/2,term_x/2);
                     
-                    break;
+                    ener_bar.render_ui(player_char.ener,player_char.ener_max);
                 }
                 
+                break;
+            }
+
         }
         
         refresh();

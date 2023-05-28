@@ -26,18 +26,6 @@ class Item
         count = count_;
     }
 };
-class Tool : public Item
-{
-    public:
-        std::string type;
-        int tier;
-    Tool(std::string name_, std::string type_,int tier = 0) : Item(name_,1)
-    {
-        type = type_;
-        tier = tier;
-    }
-};
-
 class Inventory
 {
     public:
@@ -60,13 +48,15 @@ class Inventory
         }
         return w;
     }
+    bool canRemove(int w, int count)
+    {
+        Item ad_item = inv[w];
+        ad_item.count = count;
+        return canRemove(ad_item);
+    }
     bool canRemove(Item ad_item)
     {
         int w = getIndex(ad_item);
-        return canRemove(w);
-    }
-    bool canRemove(int w)
-    {
         if(w >= inv.size() )
         {
             return false;
@@ -77,7 +67,6 @@ class Inventory
         }
         else
         {
-            Item ad_item = inv[w];
             if(inv[w].count < ad_item.count)
             {
                 return false;
@@ -120,6 +109,10 @@ class Inventory
         if(w ==-1)
         {
             inv.push_back(ad_item);
+        }
+        else
+        {
+            inv[w].count += ad_item.count;
         }
     }
 };
